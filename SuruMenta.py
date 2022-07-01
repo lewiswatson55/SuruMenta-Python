@@ -1,3 +1,7 @@
+# SuruMenta Python
+## Description: A simple bot using discord.ps to directly message a predetermined user for logging, debugging, and monitoring of remote systems.
+## Author: Lewis Watson (https://lnwatson.co.uk)
+
 import sys, discord, json
 
 global admin, alert
