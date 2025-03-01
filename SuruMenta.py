@@ -1,60 +1,46 @@
 # SuruMenta Python
-## Description: A simple bot using discord.ps to directly message a predetermined user for logging, debugging, and monitoring of remote systems.
+## Description: A simple bot using discord.py to directly message a predetermined user for logging, debugging, and monitoring of remote systems.
 ## Author: Lewis Watson (https://lnwatson.co.uk)
 
-import sys, discord, json
+import sys
+import discord
+import json
+import asyncio
 
-global admin, alert
-
-# Get bot_token and admin_id from botconfig.json
+# Load bot config
 with open('botconfig.json') as json_file:
     bot_config = json.load(json_file)
     bot_token = bot_config['bot_token']
-    admin_id = bot_config['admin_id']
+    admin_id = int(bot_config['admin_id'])  # Ensure it's an integer
 
+# Set intents
+intents = discord.Intents.default()
 
 class Bot(discord.Client):
+    def __init__(self, message, *args, **kwargs):
+        super().__init__(intents=intents, *args, **kwargs)
+        self.alert_message = message
 
     async def on_ready(self):
-        global admin, alert
-        print('Logged on as {0}!'.format(self.user))
-        admin = await self.fetch_user(admin_id)
-        await admin.send(alert)
-        await self.close()
+        print(f'Logged in as {self.user}!')
+        try:
+            admin = await self.fetch_user(admin_id)
+            await admin.send(self.alert_message)
+            print(f"Sent alert to {admin.name} ({admin_id}): {self.alert_message}")
+        except Exception as e:
+            print(f"Failed to send message: {e}")
 
-    async def on_message(self, message):
-        if message.author == self.user:
-            return
-        print('Message from {0.author}: {0.content}'.format(message))
-        await message.reply("Sus...")
-
+        await self.close()  # Shut down after sending
 
 # If program is run directly, run the bot
 if __name__ == "__main__":
-
-    # Try to get alert from cli args, catch errors
     try:
-        alert = sys.argv[1]
+        alert = sys.argv[1]  # Get message from CLI argument
     except IndexError:
         alert = "[IndexError] No Alert Passed In..."
-    except:
-        alert = "[Unexpected Error] " + str(sys.exc_info()[0]) + "..."
+    except Exception as e:
+        alert = f"[Unexpected Error] {e}"
 
-    # Create bot client and send alert
-    client = Bot()
+    # Run the bot
+    client = Bot(alert)
     client.run(bot_token)
-
-
-# Function for running the bot in another python file
-def run_bot(_alert):
-    # Set alert to _alert
-    global alert
-    if _alert:
-        alert = _alert
-    else:
-        alert = "No Alert Passed In..."
-
-    # Create bot client and send alert
-    client = Bot()
-    client.run(bot_token)
-    return client
